@@ -347,7 +347,7 @@ addEventListener('fetch', event => {
 
 	  const vmess = `{
 		"v": "2",
-		"ps": "${cc}<${addressid}",
+		"ps": "${addressid}>${cc}",
 		"add": "${address}",
 		"port": "${port}",
 		"id": "${uuid}",
@@ -395,7 +395,7 @@ addEventListener('fetch', event => {
   
 		const vmess = `{
 		  "v": "2",
-		  "ps": "${cc}<${addressid}",
+		  "ps": "${addressid}>${cc}",
 		  "add": "${address}",
 		  "port": "${port}",
 		  "id": "${uuid}",
