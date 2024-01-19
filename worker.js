@@ -11,18 +11,18 @@ addEventListener('fetch', event => {
   // 设置优选TLS地址，不带端口号默认8443
   let addresses = [
     'icook.tw:2052#假装是台湾',
-  	'cloudflare.cfgo.cc'
+    'cloudflare.cfgo.cc'
   ];
 
   // 设置优选非TLS地址api接口
   let addressesnotlsapi = [
     'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt', //可参考内容格式 自行搭建。
-  	'https://raw.githubusercontent.com/ymyuuu/Proxy-IP-library/main/best-ip.txt'
+    'https://raw.githubusercontent.com/ymyuuu/Proxy-IP-library/main/best-ip.txt'
   ];
 
   // 设置优选TLS地址api接口
   let addressesapi = [
-	  'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
+    'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
   ];
 
   let DLS = 4;
@@ -107,7 +107,7 @@ addEventListener('fetch', event => {
 			const columns = lines[i].split(',');
 	
 			// 检查TLS是否为"TRUE"且速度大于DLS
-			if (columns[tlsIndex] === 'TRUE' && parseFloat(columns[speedIndex]) > DLS) {
+			if (columns[tlsIndex].toUpperCase() === 'TRUE' && parseFloat(columns[speedIndex]) > DLS) {
 			  const ipAddress = columns[ipAddressIndex];
 			  const port = columns[portIndex];
 			  const dataCenter = columns[dataCenterIndex];
@@ -198,7 +198,7 @@ addEventListener('fetch', event => {
 		  const columns = lines[i].split(',');
   
 		  // 检查TLS是否为"FALSE"且速度大于DLS
-		  if (columns[tlsIndex] === 'FALSE' && parseFloat(columns[speedIndex]) > DLS) {
+		  if (columns[tlsIndex].toUpperCase() === 'FALSE' && parseFloat(columns[speedIndex]) > DLS) {
 			const ipAddress = columns[ipAddressIndex];
 			const port = columns[portIndex];
 			const dataCenter = columns[dataCenterIndex];
