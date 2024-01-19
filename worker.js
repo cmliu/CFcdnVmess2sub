@@ -291,7 +291,7 @@ addEventListener('fetch', event => {
 			path = '/?ed=2048';
 		  } else {
 			// 如果第一个字符不是斜杠，则在前面添加一个斜杠
-			path = '/' + path;
+			path = (path[0] === '/') ? path : '/' + path;
 		  }
 
 		  if (!alterid || alterid.trim() === '') {
