@@ -16,8 +16,7 @@ addEventListener('fetch', event => {
 
   // 设置优选非TLS地址api接口
   let addressesnotlsapi = [
-    'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt', //可参考内容格式 自行搭建。
-    'https://raw.githubusercontent.com/ymyuuu/Proxy-IP-library/main/best-ip.txt'
+    'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
   ];
 
   // 设置优选TLS地址api接口
