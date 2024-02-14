@@ -2,26 +2,26 @@ addEventListener('fetch', event => {
 	event.respondWith(handleRequest(event.request))
   })
   
-  // 设置优选非TLS地址，不带端口号默认8080
-  let addressesnotls = [
-    'what.the.fuck.cloudns.biz:2095#Channel t.me/CMLiussss 解锁优选节点',
-    'www.visa.com.hk:8880#假装是香港'
-  ];
-
   // 设置优选TLS地址，不带端口号默认8443
   let addresses = [
+    'cf.090227.xyz:8443#Channel t.me/CMLiussss 解锁优选节点',
     'icook.tw:2052#假装是台湾',
     'cloudflare.cfgo.cc'
   ];
 
-  // 设置优选非TLS地址api接口
-  let addressesnotlsapi = [
-    'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
+  // 设置优选非TLS地址，不带端口号默认8080
+  let addressesnotls = [
+    'www.visa.com.hk:8880#假装是香港'
   ];
 
   // 设置优选TLS地址api接口
   let addressesapi = [
     'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
+  ];
+
+  // 设置优选非TLS地址api接口
+  let addressesnotlsapi = [
+    'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
   ];
 
   let DLS = 4;
@@ -31,6 +31,27 @@ addEventListener('fetch', event => {
   
   let subconverter = "api.v1.mk"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
   let subconfig = "https://raw.githubusercontent.com/cmliu/edgetunnel/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
+
+  let BotToken =''; //可以为空，或者@BotFather中输入/start，/newbot，并关注机器人
+  let ChatID =''; //可以为空，或者@userinfobot中获取，/start
+  let vmessLinks = [ //本地CFcdnVmess节点池
+	//'vmess://ew0KICAidiI6ICIyIiwNCiAgInBzIjogIk5MIiwNCiAgImFkZCI6ICJjZi4wOTAyMjcueHl6IiwNCiAgInBvcnQiOiAiNDQzIiwNCiAgImlkIjogIjA2MTk1YjViLTM4MTUtNGEwNy05NmY3LTQ3ZWVmYmIxYjE0MyIsDQogICJhaWQiOiAiMCIsDQogICJzY3kiOiAiYXV0byIsDQogICJuZXQiOiAid3MiLA0KICAidHlwZSI6ICJub25lIiwNCiAgImhvc3QiOiAidXJueGV3enZoLnNpdGUiLA0KICAicGF0aCI6ICIva3dobXZ3cyIsDQogICJ0bHMiOiAidGxzIiwNCiAgInNuaSI6ICJ1cm54ZXd6dmguc2l0ZSIsDQogICJhbHBuIjogIiIsDQogICJmcCI6ICIiDQp9',
+  ];
+  let vmessLinksURL = 'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/vmesslinks';//CFcdnVmess节点池URL
+  let proxyhosts = [  //代理域名池
+	'fc071d49-af91-42d6-a20e-5a64e24a53bc.71a45835-dd0c-4d51-8bd4-9ccf9f223662.casacam.net',
+	'68123106-3e43-4958-b75a-b06e81eabf79.50d88e28-a870-497d-bf87-c20fb6802871.camdvr.org',
+	'30388d70-6f5c-4d7c-8daa-9d3df7c5c526.9150e878-8296-4798-a172-c3fe66b8dee5.ddnsgeek.com',
+	'ca3ff542-1cef-4e11-8fe2-edf0be054938.ee137666-1e0a-46db-bbd6-cc18f9841234.accesscam.org',
+	'45c6457b-17f3-403d-bb15-9bfb4718964a.71a45835-dd0c-4d51-8bd4-9ccf9f223662.casacam.net',
+	'32402ac4-000d-4d4b-81cb-8d360cb770b1.50d88e28-a870-497d-bf87-c20fb6802871.camdvr.org',
+	'1e84f9b8-ceb1-47fc-9c10-634201bd9959.9150e878-8296-4798-a172-c3fe66b8dee5.ddnsgeek.com',
+	'15212712-20f5-40a5-b9aa-8363e0130171.ee137666-1e0a-46db-bbd6-cc18f9841234.accesscam.org',
+	'478a9f2a-0d66-4035-a797-06e9c83c6739.3869fe04-6fcd-4ad4-a8f4-40582f4fa0c4.giize.com',
+	'e8b99cbe-9ebd-4a20-a497-38f4b29f2c98.83b11782-ecae-411f-90c3-2a01bb33260a.gleeze.com',
+	'fe9b5676-a2aa-4b6a-8257-cd2dd0910205.8c98ef2b-bee2-470b-b759-9f5efbc10812.freeddns.org',
+	'159d770e-fd74-4069-a73b-fe6ececa7951.f82aee4c-752c-4b0c-9793-380d4d76435c.ddnsgeek.com',
+	];
 
   function utf8ToBase64(str) {
 	return btoa(unescape(encodeURIComponent(str)));
@@ -231,12 +252,54 @@ addEventListener('fetch', event => {
 	let security = "";
 
 	if (url.pathname.includes("/auto") || url.pathname.includes("/404") || url.pathname.includes("/sos")) {
-		host = "wapv62g.gorun.tech";
-		uuid = "57c3bfd6-09d1-4954-9b67-3a7580adc14f";
-		path = "/ebffd932-3fb9-460e-dc98-700b592bfb9c";
-		alterid = "0";
-		security = "auto";
-		cc = "HK";
+		if (vmessLinksURL) {
+			try {
+				const response = await fetch(vmessLinksURL); // 直接使用vmessLinksURL
+		
+				if (!response.ok) {
+					console.error('获取地址时出错:', response.status, response.statusText);
+					return; // 如果有错误，直接返回
+				}
+		
+				const text = await response.text();
+				const lines = text.split('\n');
+				// 使用startsWith或者正则表达式检查每行
+				const vmessLinksTest = lines.filter(line => line.startsWith('vmess://'));
+		
+				vmessLinks = vmessLinks.concat(vmessLinksTest);
+			} catch (error) {
+				console.error('获取地址时出错:', error);
+			}
+		}
+
+		// 使用Set对象去重
+		const uniquevmessLinks = [...new Set(vmessLinks)];
+
+		const vmessLink = uniquevmessLinks[Math.floor(Math.random() * uniquevmessLinks.length)];
+		// 移除开头的"vmess://"并解码
+		const base64Content = vmessLink.slice(8);
+		const decodedString = atob(base64Content);
+
+		// 将解码后的字符串转换为对象
+		const obj = JSON.parse(decodedString);
+
+		// 读取并赋值对应字段
+		uuid = obj.id;
+		path = '/'+ obj.host +':'+ obj.port + obj.path;
+		host = proxyhosts[Math.floor(Math.random() * proxyhosts.length)] ;
+		alterid = obj.aid;
+		security = obj.scy;
+
+		const response = await fetch(`http://ip-api.com/json/${obj.host}?lang=zh-CN`);
+		if (response.status == 200) { 
+			const ipInfo = await response.json();
+			cc = ipInfo.country;
+		} else {
+			cc = "未知";
+		}
+
+		await sendMessage("#Vmess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+
 	} else if (url.pathname.includes("/lunzi")) {
 		let sites = [
 			{ url: 'https://raw.githubusercontent.com/Alvin9999/pac2/master/xray/config.json',type: "xray"},
@@ -519,7 +582,7 @@ addEventListener('fetch', event => {
 			return vmessLink;
 		}).join('\n');
 	
-		const 汇总 = notlsresponseBody + '\n'+ responseBody ;
+		const 汇总 = responseBody + '\n'+ notlsresponseBody ;
 		const base64Response = btoa(汇总) ;
 	
 		const response = new Response(base64Response, {
@@ -530,3 +593,27 @@ addEventListener('fetch', event => {
 	}
 
   }
+
+async function sendMessage(type, ip, add_data = "") {
+	if ( BotToken !== '' && ChatID !== ''){
+		let msg = "";
+		const response = await fetch(`http://ip-api.com/json/${ip}?lang=zh-CN`);
+		if (response.status == 200) { 
+			const ipInfo = await response.json();
+			msg = `${type}\nIP: ${ip}\n国家: ${ipInfo.country}\n<tg-spoiler>城市: ${ipInfo.city}\n组织: ${ipInfo.org}\nASN: ${ipInfo.as}\n${add_data}`;
+		} else {
+			msg = `${type}\nIP: ${ip}\n<tg-spoiler>${add_data}`;
+		}
+	  
+		let url = "https://api.telegram.org/bot"+ BotToken +"/sendMessage?chat_id=" + ChatID + "&parse_mode=HTML&text=" + encodeURIComponent(msg);
+	  
+		return fetch(url, {
+		  method: 'get',
+		  headers: {
+			'Accept': 'text/html,application/xhtml+xml,application/xml;',
+			'Accept-Encoding': 'gzip, deflate, br',
+			'User-Agent': 'Mozilla/5.0 Chrome/90.0.4430.72'
+		  }
+		});
+	}
+}
