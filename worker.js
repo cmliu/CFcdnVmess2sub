@@ -289,26 +289,29 @@ addEventListener('fetch', event => {
 		}
 
 		if (proxyhostsURL) {
-			try {
-				const response = await fetch(proxyhostsURL); // 直接使用vmessLinksURL
+		    try {
+		        const response = await fetch(proxyhostsURL); // 直接使用vmessLinksURL
 		
-				if (!response.ok) {
-					console.error('获取地址时出错:', response.status, response.statusText);
-					return; // 如果有错误，直接返回
-				}
+		        if (!response.ok) {
+		            console.error('获取地址时出错:', response.status, response.statusText);
+		            return; // 如果有错误，直接返回
+		        }
 		
-				const text = await response.text();
-				const lines = text.split('\n');
+		        const text = await response.text();
+		        const lines = text.split('\n');
+		        // 过滤掉空行或只包含空白字符的行
+		        const nonEmptyLines = lines.filter(line => line.trim() !== '');
 		
-				proxyhosts = proxyhosts.concat(lines);
-			} catch (error) {
-				console.error('获取地址时出错:', error);
-			}
+		        proxyhosts = proxyhosts.concat(nonEmptyLines);
+		    } catch (error) {
+		        console.error('获取地址时出错:', error);
+		    }
 		}
-
+		
 		// 使用Set对象去重
 		const uniqueproxyhosts = [...new Set(proxyhosts)];
-		host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)] ;
+		host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
+
 		await sendMessage("#Vmess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 
 	} else if (url.pathname.includes("/lunzi")) {
