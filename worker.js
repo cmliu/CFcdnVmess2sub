@@ -284,18 +284,18 @@ addEventListener('fetch', event => {
 		const ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
 		cc = '未知';
-		let url = 'http://ip-api.com/json/';
+		let ipapiurl = 'http://ip-api.com/json/';
 
 		// 根据 obj.ps 是否符合 IPv4 判断调用哪个 API
 		if (ipv4Pattern.test(obj.ps)) {
-			url += obj.ps;
+			ipapiurl += obj.ps;
 		} else {
-			url += obj.host;
+			ipapiurl += obj.host;
 		}
-		url += '?lang=zh-CN';
+		ipapiurl += '?lang=zh-CN';
 
 		// 发起请求
-		const response = await fetch(url);
+		const response = await fetch(ipapiurl);
 		if(response.status == 200) {
 			const ipInfo = await response.json();
 			cc = ipInfo.country + " " + ipInfo.city;
