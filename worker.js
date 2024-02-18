@@ -280,12 +280,25 @@ addEventListener('fetch', event => {
 		alterid = obj.aid;
 		security = obj.scy;
 
-		const response = await fetch(`http://ip-api.com/json/${obj.host}?lang=zh-CN`);
-		if (response.status == 200) { 
-			const ipInfo = await response.json();
-			cc = ipInfo.country;
+		// IPv4 正则表达式
+		const ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+		cc = '未知';
+		let url = 'http://ip-api.com/json/';
+
+		// 根据 obj.ps 是否符合 IPv4 判断调用哪个 API
+		if (ipv4Pattern.test(obj.ps)) {
+			url += obj.ps;
 		} else {
-			cc = "未知";
+			url += obj.host;
+		}
+		url += '?lang=zh-CN';
+
+		// 发起请求
+		const response = await fetch(url);
+		if(response.status == 200) {
+			const ipInfo = await response.json();
+			cc = ipInfo.country + " " + ipInfo.city;
 		}
 
 		if (proxyhostsURL) {
