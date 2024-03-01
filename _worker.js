@@ -1,3 +1,8 @@
+
+// 部署完成后在网址后面加上这个，获取订阅器默认节点，/auto
+
+let mytoken= 'auto';//快速订阅访问入口, 留空则不启动快速订阅
+
 // 设置优选TLS地址，不带端口号默认8443
 let addresses = [
 	'cf.090227.xyz:8443#Channel t.me/CMLiussss 解锁优选节点',
@@ -250,7 +255,10 @@ async function getAddressesnotlscsv() {
 }
 
 export default {
-	async fetch(request) {
+	async fetch(request, env) {
+		mytoken = env.TOKEN || mytoken;
+		BotToken = env.TGTOKEN || BotToken;
+		ChatID = env.TGID || ChatID; 
 		const userAgentHeader = request.headers.get('User-Agent');
 		const userAgent = userAgentHeader ? userAgentHeader.toLowerCase() : "null";
 		const url = new URL(request.url);
@@ -261,7 +269,7 @@ export default {
 		let alterid = "";
 		let security = "";
 
-		if (url.pathname.includes("/auto") || url.pathname.includes("/404") || url.pathname.includes("/sos")) {
+		if (mytoken !== '' && url.pathname.includes(mytoken)) {
 			if (vmessLinksURL) {
 				try {
 					const response = await fetch(vmessLinksURL); // 直接使用vmessLinksURL
