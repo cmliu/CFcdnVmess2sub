@@ -3,34 +3,36 @@
 
 let mytoken= 'auto';//快速订阅访问入口, 留空则不启动快速订阅
 
-// 设置优选TLS地址，不带端口号默认8443
+// 设置优选地址，不带端口号默认443，TLS订阅生成
 let addresses = [
-	'cf.090227.xyz:8443#Channel t.me/CMLiussss 解锁优选节点',
-	'icook.tw:2052#假装是台湾',
-	'cloudflare.cfgo.cc'
+	'icook.tw:2053#官方优选域名',
+	'cloudflare.cfgo.cc#优选官方线路',
 ];
 
-// 设置优选非TLS地址，不带端口号默认8080
-let addressesnotls = [
-	'www.visa.com.hk:8880#假装是香港'
-];
-
-// 设置优选TLS地址api接口
+// 设置优选地址api接口
 let addressesapi = [
-	'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
+	'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesapi.txt', //可参考内容格式 自行搭建。
+	//'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressesipv6api.txt', //IPv6优选内容格式 自行搭建。
 ];
 
-// 设置优选非TLS地址api接口
+// 设置优选地址，不带端口号默认80，noTLS订阅生成
+let addressesnotls = [
+	'www.visa.com.sg#官方优选域名',
+	'www.wto.org:8080#官方优选域名',
+	'www.who.int:8880#官方优选域名',
+];
+
+// 设置优选noTLS地址api接口
 let addressesnotlsapi = [
-	'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt' //可参考内容格式 自行搭建。
+	'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt',
 ];
 
-let DLS = 4;
+let DLS = 7;//速度下限
 let addressescsv = [
-	//'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressescsv.csv'
+	//'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressescsv.csv', //iptest测速结果文件。
 ];
 
-let subconverter = "api.v1.mk"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
+let subconverter = "apiurl.v1.mk"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
 
 let BotToken =''; //可以为空，或者@BotFather中输入/start，/newbot，并关注机器人
@@ -39,10 +41,16 @@ let vmessLinks = [ //本地CFcdnVmess节点池
 	//'vmess://ew0KICAidiI6ICIyIiwNCiAgInBzIjogIk5MIiwNCiAgImFkZCI6ICJjZi4wOTAyMjcueHl6IiwNCiAgInBvcnQiOiAiNDQzIiwNCiAgImlkIjogIjA2MTk1YjViLTM4MTUtNGEwNy05NmY3LTQ3ZWVmYmIxYjE0MyIsDQogICJhaWQiOiAiMCIsDQogICJzY3kiOiAiYXV0byIsDQogICJuZXQiOiAid3MiLA0KICAidHlwZSI6ICJub25lIiwNCiAgImhvc3QiOiAidXJueGV3enZoLnNpdGUiLA0KICAicGF0aCI6ICIva3dobXZ3cyIsDQogICJ0bHMiOiAidGxzIiwNCiAgInNuaSI6ICJ1cm54ZXd6dmguc2l0ZSIsDQogICJhbHBuIjogIiIsDQogICJmcCI6ICIiDQp9',
 ];
 let vmessLinksURL = 'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/vmesslinks';//CFcdnVmess节点池URL
-let proxyhosts = [//代理域名池
+let proxyhosts = [//本地代理域名池
 	//'ppfv2tl9veojd-maillazy.pages.dev',
 ];
-let proxyhostsURL = 'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/proxyhosts';//代理域名池URL
+let proxyhostsURL = 'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/proxyhosts';//在线代理域名池URL
+let FileName = 'WorkerVless2sub';
+let SUBUpdateTime = 6; 
+let total = 99;//PB
+//let timestamp = now;
+let timestamp = 4102329600000;//2099-12-31
+const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[.*\]):?(\d+)?#?(.*)?$/;
 
 function utf8ToBase64(str) {
 	return btoa(unescape(encodeURIComponent(str)));
@@ -72,44 +80,49 @@ async function sendMessage(type, ip, add_data = "") {
 	}
 }
 
-async function getAddressesapi() {
-	if (!addressesapi || addressesapi.length === 0) {
-	return [];
+async function getAddressesapi(api) {
+	if (!api || api.length === 0) {
+		return [];
 	}
 	
 	let newAddressesapi = [];
 	
-	for (const apiUrl of addressesapi) {
-	try {
-		const response = await fetch(apiUrl);
-	
-		if (!response.ok) {
-		console.error('获取地址时出错:', response.status, response.statusText);
-		continue;
+	for (const apiUrl of api) {
+		try {
+			const response = await fetch(apiUrl);
+		
+			if (!response.ok) {
+				console.error('获取地址时出错:', response.status, response.statusText);
+				continue;
+			}
+		
+			const text = await response.text();
+			let lines;
+			if (text.includes('\r\n')){
+				lines = text.split('\r\n');
+			} else {
+				lines = text.split('\n');
+			}
+			//const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?(#.*)?$/;
+		
+			const apiAddresses = lines.map(line => {
+				const match = line.match(regex);
+				return match ? match[0] : null;
+			}).filter(Boolean);
+		
+			newAddressesapi = newAddressesapi.concat(apiAddresses);
+		} catch (error) {
+			console.error('获取地址时出错:', error);
+			continue;
 		}
-	
-		const text = await response.text();
-		const lines = text.split('\n');
-		const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?(#.*)?$/;
-	
-		const apiAddresses = lines.map(line => {
-		const match = line.match(regex);
-		return match ? match[0] : null;
-		}).filter(Boolean);
-	
-		newAddressesapi = newAddressesapi.concat(apiAddresses);
-	} catch (error) {
-		console.error('获取地址时出错:', error);
-		continue;
-	}
 	}
 	
 	return newAddressesapi;
 }
-	
-async function getAddressescsv() {
+
+async function getAddressescsv(tls) {
 	if (!addressescsv || addressescsv.length === 0) {
-	return [];
+		return [];
 	}
 	
 	let newAddressescsv = [];
@@ -119,130 +132,44 @@ async function getAddressescsv() {
 			const response = await fetch(csvUrl);
 		
 			if (!response.ok) {
-			console.error('获取CSV地址时出错:', response.status, response.statusText);
-			continue;
-			}
-		
-			const text = await response.text();// 使用正确的字符编码解析文本内容
-			const lines = text.split('\n');
-		
-			// 检查CSV头部是否包含必需字段
-			const header = lines[0].split(',');
-			const tlsIndex = header.indexOf('TLS');
-			const speedIndex = header.length - 1; // 最后一个字段
-		
-			const ipAddressIndex = 0;// IP地址在 CSV 头部的位置
-			const portIndex = 1;// 端口在 CSV 头部的位置
-			const dataCenterIndex = tlsIndex + 1; // 数据中心是 TLS 的后一个字段
-		
-			if (tlsIndex === -1) {
-			console.error('CSV文件缺少必需的字段');
-			continue;
-			}
-		
-			// 从第二行开始遍历CSV行
-			for (let i = 1; i < lines.length; i++) {
-			const columns = lines[i].split(',');
-		
-			// 检查TLS是否为"TRUE"且速度大于DLS
-			if (columns[tlsIndex].toUpperCase() === 'TRUE' && parseFloat(columns[speedIndex]) > DLS) {
-			const ipAddress = columns[ipAddressIndex];
-			const port = columns[portIndex];
-			const dataCenter = columns[dataCenterIndex];
-		
-			const formattedAddress = `${ipAddress}:${port}#${dataCenter}`;
-			newAddressescsv.push(formattedAddress);
-			}
-			}
-		} catch (error) {
-			console.error('获取CSV地址时出错:', error);
-			continue;
-		}
-	}
-	
-	return newAddressescsv;
-}
-	
-async function getAddressesnotlsapi() {
-	if (!addressesnotlsapi || addressesnotlsapi.length === 0) {
-		return [];
-	}
-	
-	let newAddressesnotlsapi = [];
-	
-	for (const apiUrl of addressesnotlsapi) {
-		try {
-			const response = await fetch(apiUrl);
-			
-			if (!response.ok) {
-				console.error('获取地址时出错:', response.status, response.statusText);
-				continue;
-			}
-			
-			const text = await response.text();
-			const lines = text.split('\n');
-			const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?(#.*)?$/;
-			
-			const apiAddressesnotls = lines.map(line => {
-				const match = line.match(regex);
-				return match ? match[0] : null;
-			}).filter(Boolean);
-			
-			newAddressesnotlsapi = newAddressesnotlsapi.concat(apiAddressesnotls);
-		} catch (error) {
-			console.error('获取地址时出错:', error);
-			continue;
-		}
-	}
-	
-	return newAddressesnotlsapi;
-}
-
-async function getAddressesnotlscsv() {
-	if (!addressescsv || addressescsv.length === 0) {
-		return [];
-	}
-	
-	let newAddressesnotlscsv = [];
-	
-	for (const csvUrl of addressescsv) {
-		try {
-			const response = await fetch(csvUrl);
-			
-			if (!response.ok) {
 				console.error('获取CSV地址时出错:', response.status, response.statusText);
 				continue;
 			}
-			
+		
 			const text = await response.text();// 使用正确的字符编码解析文本内容
-			const lines = text.split('\n');
-			
+			let lines;
+			if (text.includes('\r\n')){
+				lines = text.split('\r\n');
+			} else {
+				lines = text.split('\n');
+			}
+		
 			// 检查CSV头部是否包含必需字段
 			const header = lines[0].split(',');
 			const tlsIndex = header.indexOf('TLS');
 			const speedIndex = header.length - 1; // 最后一个字段
-			
+		
 			const ipAddressIndex = 0;// IP地址在 CSV 头部的位置
 			const portIndex = 1;// 端口在 CSV 头部的位置
 			const dataCenterIndex = tlsIndex + 1; // 数据中心是 TLS 的后一个字段
-			
+		
 			if (tlsIndex === -1) {
 				console.error('CSV文件缺少必需的字段');
 				continue;
 			}
-			
+		
 			// 从第二行开始遍历CSV行
 			for (let i = 1; i < lines.length; i++) {
 				const columns = lines[i].split(',');
+		
+				// 检查TLS是否为"TRUE"且速度大于DLS
+				if (columns[tlsIndex].toUpperCase() === tls && parseFloat(columns[speedIndex]) > DLS) {
+					const ipAddress = columns[ipAddressIndex];
+					const port = columns[portIndex];
+					const dataCenter = columns[dataCenterIndex];
 			
-				// 检查TLS是否为"FALSE"且速度大于DLS
-				if (columns[tlsIndex].toUpperCase() === 'FALSE' && parseFloat(columns[speedIndex]) > DLS) {
-				const ipAddress = columns[ipAddressIndex];
-				const port = columns[portIndex];
-				const dataCenter = columns[dataCenterIndex];
-			
-				const formattedAddress = `${ipAddress}:${port}#${dataCenter}`;
-				newAddressesnotlscsv.push(formattedAddress);
+					const formattedAddress = `${ipAddress}:${port}#${dataCenter}`;
+					newAddressescsv.push(formattedAddress);
 				}
 			}
 		} catch (error) {
@@ -251,7 +178,7 @@ async function getAddressesnotlscsv() {
 		}
 	}
 	
-	return newAddressesnotlscsv;
+	return newAddressescsv;
 }
 
 export default {
@@ -270,7 +197,10 @@ export default {
 		let path = "";
 		let alterid = "";
 		let security = "";
-
+		let UD = Math.floor(((timestamp - Date.now())/timestamp * 99 * 1099511627776 * 1024)/2);
+		total = total * 1099511627776 * 1024;
+		let expire= Math.floor(timestamp / 1000) ;
+		
 		if (mytoken !== '' && url.pathname.includes(mytoken)) {
 			if (vmessLinksURL) {
 				try {
@@ -444,7 +374,12 @@ export default {
 				const subconverterContent = await subconverterResponse.text();
 			
 				return new Response(subconverterContent, {
-				headers: { 'content-type': 'text/plain; charset=utf-8' },
+					headers: { 
+						"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
+						"content-type": "text/plain; charset=utf-8",
+						"Profile-Update-Interval": `${SUBUpdateTime}`,
+						"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
+					},
 				});
 			} catch (error) {
 				return new Response(`Error: ${error.message}`, {
@@ -465,7 +400,12 @@ export default {
 				const subconverterContent = await subconverterResponse.text();
 			
 				return new Response(subconverterContent, {
-				headers: { 'content-type': 'text/plain; charset=utf-8' },
+					headers: { 
+						"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
+						"content-type": "text/plain; charset=utf-8",
+						"Profile-Update-Interval": `${SUBUpdateTime}`,
+						"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
+					},
 				});
 			} catch (error) {
 				return new Response(`Error: ${error.message}`, {
@@ -475,13 +415,13 @@ export default {
 			}
 		} else {
 
-		const newAddressesapi = await getAddressesapi();
-		const newAddressescsv = await getAddressescsv();
+		const newAddressesapi = await getAddressesapi(addressesapi);
+		const newAddressescsv = await getAddressescsv('TRUE');
 		addresses = addresses.concat(newAddressesapi);
 		addresses = addresses.concat(newAddressescsv);
 		
-		const newAddressesnotlsapi = await getAddressesnotlsapi();
-		const newAddressesnotlscsv = await getAddressesnotlscsv();
+		const newAddressesnotlsapi = await getAddressesapi(addressesnotlsapi);
+		const newAddressesnotlscsv = await getAddressescsv('FALSE');
 		addressesnotls = addressesnotls.concat(newAddressesnotlsapi);
 		addressesnotls = addressesnotls.concat(newAddressesnotlscsv);
 		
@@ -490,27 +430,34 @@ export default {
 		const uniqueAddressesnotls = [...new Set(addressesnotls)];
 		
 		const responseBody = uniqueAddresses.map(address => {
-			let port = "8443";
+			let port = "443";
 			let addressid = address;
 		
-			if (address.includes(':') && address.includes('#')) {
-			const parts = address.split(':');
-			address = parts[0];
-			const subParts = parts[1].split('#');
-			port = subParts[0];
-			addressid = subParts[1];
-			} else if (address.includes(':')) {
-			const parts = address.split(':');
-			address = parts[0];
-			port = parts[1];
-			} else if (address.includes('#')) {
-			const parts = address.split('#');
-			address = parts[0];
-			addressid = parts[1];
-			}
-		
-			if (addressid.includes(':')) {
-			addressid = addressid.split(':')[0];
+			const match = addressid.match(regex);
+			if (!match) {
+				if (address.includes(':') && address.includes('#')) {
+					const parts = address.split(':');
+					address = parts[0];
+					const subParts = parts[1].split('#');
+					port = subParts[0];
+					addressid = subParts[1];
+				} else if (address.includes(':')) {
+					const parts = address.split(':');
+					address = parts[0];
+					port = parts[1];
+				} else if (address.includes('#')) {
+					const parts = address.split('#');
+					address = parts[0];
+					addressid = parts[1];
+				}
+			
+				if (addressid.includes(':')) {
+					addressid = addressid.split(':')[0];
+				}
+			} else {
+				address = match[1];
+				port = match[2] || port;
+				addressid = match[3] || address;
 			}
 		
 			const vmess = `{
@@ -538,27 +485,34 @@ export default {
 		}).join('\n');
 		
 		const notlsresponseBody = uniqueAddressesnotls.map(address => {
-			let port = "8080";
+			let port = "80";
 			let addressid = address;
 		
-			if (address.includes(':') && address.includes('#')) {
-			const parts = address.split(':');
-			address = parts[0];
-			const subParts = parts[1].split('#');
-			port = subParts[0];
-			addressid = subParts[1];
-			} else if (address.includes(':')) {
-			const parts = address.split(':');
-			address = parts[0];
-			port = parts[1];
-			} else if (address.includes('#')) {
-			const parts = address.split('#');
-			address = parts[0];
-			addressid = parts[1];
-			}
-		
-			if (addressid.includes(':')) {
-			addressid = addressid.split(':')[0];
+			const match = addressid.match(regex);
+			if (!match) {
+				if (address.includes(':') && address.includes('#')) {
+					const parts = address.split(':');
+					address = parts[0];
+					const subParts = parts[1].split('#');
+					port = subParts[0];
+					addressid = subParts[1];
+				} else if (address.includes(':')) {
+					const parts = address.split(':');
+					address = parts[0];
+					port = parts[1];
+				} else if (address.includes('#')) {
+					const parts = address.split('#');
+					address = parts[0];
+					addressid = parts[1];
+				}
+			
+				if (addressid.includes(':')) {
+					addressid = addressid.split(':')[0];
+				}
+			} else {
+				address = match[1];
+				port = match[2] || port;
+				addressid = match[3] || address;
 			}
 		
 			const vmess = `{
@@ -589,7 +543,12 @@ export default {
 		const base64Response = btoa(汇总) ;
 		
 		const response = new Response(base64Response, {
-			headers: { 'content-type': 'text/plain' },
+			headers: { 
+				//"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
+				"content-type": "text/plain; charset=utf-8",
+				"Profile-Update-Interval": `${SUBUpdateTime}`,
+				"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
+			},
 		});
 
 		return response;
