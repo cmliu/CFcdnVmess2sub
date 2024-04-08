@@ -1,7 +1,7 @@
 
 // 部署完成后在网址后面加上这个，获取订阅器默认节点，/auto
 
-let mytoken= 'auto';//快速订阅访问入口, 留空则不启动快速订阅
+let mytoken= ['auto'];//快速订阅访问入口, 留空则不启动快速订阅
 
 // 设置优选地址，不带端口号默认443，TLS订阅生成
 let addresses = [
@@ -27,7 +27,7 @@ let addressesnotlsapi = [
 	'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/addressesapi.txt',
 ];
 
-let DLS = 7;//速度下限
+let DLS = 8;//速度下限
 let addressescsv = [
 	//'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressescsv.csv', //iptest测速结果文件。
 ];
@@ -45,7 +45,7 @@ let proxyhosts = [//本地代理域名池
 	//'ppfv2tl9veojd-maillazy.pages.dev',
 ];
 let proxyhostsURL = 'https://raw.githubusercontent.com/cmliu/CFcdnVmess2sub/main/proxyhosts';//在线代理域名池URL
-let FileName = 'WorkerVless2sub';
+let FileName = 'CFcdnVmess2sub';
 let SUBUpdateTime = 6; 
 let total = 99;//PB
 //let timestamp = now;
@@ -84,7 +84,28 @@ async function getAddressesapi(api) {
 	if (!api || api.length === 0) {
 		return [];
 	}
-	
+
+	let newapi = "";
+	try {
+		const responses = await Promise.allSettled(api.map(apiUrl => fetch(apiUrl,{
+			method: 'get',
+			headers: {
+				'Accept': 'text/html,application/xhtml+xml,application/xml;',
+				'User-Agent': 'cmliu/CFcdnVmess2sub'
+			}
+		}).then(response => response.ok ? response.text() : Promise.reject())));
+			
+		for (const response of responses) {
+			if (response.status === 'fulfilled') {
+				const content = await response.value;
+				newapi += content + '\n';
+			}
+		}
+	} catch (error) {
+		console.error(error);
+	}
+	const newAddressesapi = await ADD(newapi);
+/*
 	let newAddressesapi = [];
 	
 	for (const apiUrl of api) {
@@ -116,6 +137,7 @@ async function getAddressesapi(api) {
 			continue;
 		}
 	}
+*/
 	
 	return newAddressesapi;
 }
@@ -181,9 +203,20 @@ async function getAddressescsv(tls) {
 	return newAddressescsv;
 }
 
+async function ADD(envadd) {
+	var addtext = envadd.replace(/[	|"'\r\n]+/g, ',').replace(/,+/g, ',');  // 双引号、单引号和换行符替换为逗号
+	//console.log(addtext);
+	if (addtext.charAt(0) == ',') addtext = addtext.slice(1);
+	if (addtext.charAt(addtext.length -1) == ',') addtext = addtext.slice(0, addtext.length - 1);
+	const add = addtext.split(',');
+	//console.log(add);
+	return add ;
+}
+
 export default {
 	async fetch(request, env) {
-		mytoken = env.TOKEN || mytoken;
+		if (env.TOKEN) mytoken = await ADD(env.TOKEN);
+		//mytoken = env.TOKEN || mytoken;
 		BotToken = env.TGTOKEN || BotToken;
 		ChatID = env.TGID || ChatID; 
 		subconverter = env.SUBAPI || subconverter;
@@ -197,12 +230,24 @@ export default {
 		let path = "";
 		let alterid = "";
 		let security = "";
+		let sni = "";
 		let UD = Math.floor(((timestamp - Date.now())/timestamp * 99 * 1099511627776 * 1024)/2);
 		total = total * 1099511627776 * 1024;
 		let expire= Math.floor(timestamp / 1000) ;
 		
-		if (mytoken !== '' && url.pathname.includes(mytoken)) {
-			if (vmessLinksURL) {
+		if(env.LINK)vmessLinks = await ADD(env.LINK);
+		else if (env.VMESS)vmessLinks = await ADD(env.VMESS);
+		//console.log(vmessLinks);
+
+		if (env.ADD) addresses = await ADD(env.ADD);
+		if (env.ADDAPI) addressesapi = await ADD(env.ADDAPI);
+		if (env.ADDNOTLS) addressesnotls = await ADD(env.ADDNOTLS);
+		if (env.ADDNOTLSAPI) addressesnotlsapi = await ADD(env.ADDNOTLSAPI);
+		if (env.ADDCSV) addressescsv = await ADD(env.ADDCSV);
+		DLS = env.DLS || DLS;
+
+		if (mytoken.length > 0 && mytoken.some(token => url.pathname.includes(token))) {
+			if (vmessLinksURL && vmessLinks.length == 0) {
 				try {
 					const response = await fetch(vmessLinksURL); // 直接使用vmessLinksURL
 				
@@ -224,8 +269,8 @@ export default {
 
 		// 使用Set对象去重
 		const uniquevmessLinks = [...new Set(vmessLinks)];
-
 		const vmessLink = uniquevmessLinks[Math.floor(Math.random() * uniquevmessLinks.length)];
+		//console.log(vmessLinks);
 		// 移除开头的"vmess://"并解码
 		const base64Content = vmessLink.slice(8);
 		const decodedString = atob(base64Content);
@@ -284,15 +329,16 @@ export default {
 		// 使用Set对象去重
 		const uniqueproxyhosts = [...new Set(proxyhosts)];
 		host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
+		sni = host;
 
 		await sendMessage("#Vmess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
-		
 		} else {
 			host = url.searchParams.get('host');
 			uuid = url.searchParams.get('uuid');
 			path = url.searchParams.get('path');
 			alterid = url.searchParams.get('alterid');
 			security = url.searchParams.get('security');
+			sni = url.searchParams.get('sni') || host;
 			cc = url.searchParams.get('cc');
 			const pathp = url.pathname.replace(/^\/|\/$/g, "");
 			if(pathp && !url.pathname.includes("/sub"))
@@ -301,18 +347,39 @@ export default {
 				const newUrl = new URL("https://" + addrPath);
 				return fetch(new Request(newUrl, request));
 			} else if (!url.pathname.includes("/sub")) {
-				const workerUrl = url.origin + url.pathname;
-				const responseText = `
-      ################################################################
-      telegram 交流群 技术大佬~在线发牌!
-      https://t.me/CMLiussss
-      ---------------------------------------------------------------
-      ################################################################`;
-			
-				return new Response(responseText, {
-				status: 400,
-				headers: { 'content-type': 'text/plain; charset=utf-8' },
+				//首页改成一个nginx伪装页
+				return new Response(`
+				<!DOCTYPE html>
+				<html>
+				<head>
+				<title>Welcome to nginx!</title>
+				<style>
+					body {
+						width: 35em;
+						margin: 0 auto;
+						font-family: Tahoma, Verdana, Arial, sans-serif;
+					}
+				</style>
+				</head>
+				<body>
+				<h1>Welcome to nginx!</h1>
+				<p>If you see this page, the nginx web server is successfully installed and
+				working. Further configuration is required.</p>
+				
+				<p>For online documentation and support please refer to
+				<a href="http://nginx.org/">nginx.org</a>.<br/>
+				Commercial support is available at
+				<a href="http://nginx.com/">nginx.com</a>.</p>
+				
+				<p><em>Thank you for using nginx.</em></p>
+				</body>
+				</html>
+				`, {
+					headers: {
+						'Content-Type': 'text/html; charset=UTF-8',
+					},
 				});
+			
 			}
 			
 			if (!host || !uuid) {
@@ -473,7 +540,7 @@ export default {
 "host": "${host}",
 "path": "${path}",
 "tls": "tls",
-"sni": "${host}",
+"sni": "${sni}",
 "alpn": "",
 "fp": ""
 }`;
