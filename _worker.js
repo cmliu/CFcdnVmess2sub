@@ -34,7 +34,7 @@ let addressescsv = [
 
 let subconverter = "apiurl.v1.mk"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
-
+let noTLS = true; // false
 let BotToken =''; //可以为空，或者@BotFather中输入/start，/newbot，并关注机器人
 let ChatID =''; //可以为空，或者@userinfobot中获取，/start
 let vmessLinks = [ //本地CFcdnVmess节点池
@@ -79,7 +79,7 @@ async function sendMessage(type, ip, add_data = "") {
 		});
 	}
 }
-
+let MamaJustKilledAMan = ['telegram','twitter','miaoko'];
 async function getAddressesapi(api) {
 	if (!api || api.length === 0) {
 		return [];
@@ -213,6 +213,37 @@ async function ADD(envadd) {
 	return add ;
 }
 
+async function nginx() {
+	const text = `
+	<!DOCTYPE html>
+	<html>
+	<head>
+	<title>Welcome to nginx!</title>
+	<style>
+		body {
+			width: 35em;
+			margin: 0 auto;
+			font-family: Tahoma, Verdana, Arial, sans-serif;
+		}
+	</style>
+	</head>
+	<body>
+	<h1>Welcome to nginx!</h1>
+	<p>If you see this page, the nginx web server is successfully installed and
+	working. Further configuration is required.</p>
+	
+	<p>For online documentation and support please refer to
+	<a href="http://nginx.org/">nginx.org</a>.<br/>
+	Commercial support is available at
+	<a href="http://nginx.com/">nginx.com</a>.</p>
+	
+	<p><em>Thank you for using nginx.</em></p>
+	</body>
+	</html>
+	`
+	return text ;
+}
+
 export default {
 	async fetch(request, env) {
 		if (env.TOKEN) mytoken = await ADD(env.TOKEN);
@@ -233,6 +264,7 @@ export default {
 		let security = "";
 		let sni = "";
 		let UD = Math.floor(((timestamp - Date.now())/timestamp * 99 * 1099511627776 * 1024)/2);
+		if (env.UA) MamaJustKilledAMan = MamaJustKilledAMan.concat(await ADD(env.UA));
 		total = total * 1099511627776 * 1024;
 		let expire= Math.floor(timestamp / 1000) ;
 		
@@ -268,71 +300,72 @@ export default {
 				}
 			}
 
-		// 使用Set对象去重
-		const uniquevmessLinks = [...new Set(vmessLinks)];
-		const vmessLink = uniquevmessLinks[Math.floor(Math.random() * uniquevmessLinks.length)];
-		//console.log(vmessLinks);
-		// 移除开头的"vmess://"并解码
-		const base64Content = vmessLink.slice(8);
-		const decodedString = atob(base64Content);
+			// 使用Set对象去重
+			const uniquevmessLinks = [...new Set(vmessLinks)];
+			const vmessLink = uniquevmessLinks[Math.floor(Math.random() * uniquevmessLinks.length)];
+			noTLS = false;
+			//console.log(vmessLinks);
+			// 移除开头的"vmess://"并解码
+			const base64Content = vmessLink.slice(8);
+			const decodedString = atob(base64Content);
 
-		// 将解码后的字符串转换为对象
-		const obj = JSON.parse(decodedString);
+			// 将解码后的字符串转换为对象
+			const obj = JSON.parse(decodedString);
 
-		// 读取并赋值对应字段
-		uuid = obj.id;
-		path = '/'+ obj.host +':'+ obj.port + obj.path;
-		//host = proxyhosts[Math.floor(Math.random() * proxyhosts.length)] ;
-		alterid = obj.aid;
-		security = obj.scy;
+			// 读取并赋值对应字段
+			uuid = obj.id;
+			path = '/'+ obj.host +':'+ obj.port + obj.path;
+			//host = proxyhosts[Math.floor(Math.random() * proxyhosts.length)] ;
+			alterid = obj.aid;
+			security = obj.scy;
 
-		// IPv4 正则表达式
-		const ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+			// IPv4 正则表达式
+			const ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
-		cc = '未知';
-		let ipapiurl = 'http://ip-api.com/json/';
+			cc = '未知';
+			let ipapiurl = 'http://ip-api.com/json/';
 
-		// 根据 obj.ps 是否符合 IPv4 判断调用哪个 API
-		if (ipv4Pattern.test(obj.ps)) {
-			ipapiurl += obj.ps;
-		} else {
-			ipapiurl += obj.host;
-		}
-		ipapiurl += '?lang=zh-CN';
-
-		// 发起请求
-		const response = await fetch(ipapiurl);
-		if(response.status == 200) {
-			const ipInfo = await response.json();
-			cc = ipInfo.country + " " + ipInfo.city;
-		}
-
-		if (proxyhostsURL) {
-			try {
-				const response = await fetch(proxyhostsURL); 
-		
-				if (!response.ok) {
-					console.error('获取地址时出错:', response.status, response.statusText);
-					return; // 如果有错误，直接返回
-				}
-		
-				const text = await response.text();
-				const lines = text.split('\n');
-				// 过滤掉空行或只包含空白字符的行
-				const nonEmptyLines = lines.filter(line => line.trim() !== '');
-		
-				proxyhosts = proxyhosts.concat(nonEmptyLines);
-			} catch (error) {
-				console.error('获取地址时出错:', error);
+			// 根据 obj.ps 是否符合 IPv4 判断调用哪个 API
+			if (ipv4Pattern.test(obj.ps)) {
+				ipapiurl += obj.ps;
+			} else {
+				ipapiurl += obj.host;
 			}
-		}
-		
-		// 使用Set对象去重
-		const uniqueproxyhosts = [...new Set(proxyhosts)];
-		host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
-		sni = host;
+			ipapiurl += '?lang=zh-CN';
 
-		await sendMessage("#Vmess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+			// 发起请求
+			const response = await fetch(ipapiurl);
+			if(response.status == 200) {
+				const ipInfo = await response.json();
+				cc = ipInfo.country + " " + ipInfo.city;
+			}
+
+			if (proxyhostsURL) {
+				try {
+					const response = await fetch(proxyhostsURL); 
+			
+					if (!response.ok) {
+						console.error('获取地址时出错:', response.status, response.statusText);
+						return; // 如果有错误，直接返回
+					}
+			
+					const text = await response.text();
+					const lines = text.split('\n');
+					// 过滤掉空行或只包含空白字符的行
+					const nonEmptyLines = lines.filter(line => line.trim() !== '');
+			
+					proxyhosts = proxyhosts.concat(nonEmptyLines);
+				} catch (error) {
+					console.error('获取地址时出错:', error);
+				}
+			}
+			
+			// 使用Set对象去重
+			const uniqueproxyhosts = [...new Set(proxyhosts)];
+			host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
+			sni = host;
+
+			await sendMessage("#Vmess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 		} else {
 			host = url.searchParams.get('host');
 			uuid = url.searchParams.get('uuid');
@@ -349,33 +382,7 @@ export default {
 				return fetch(new Request(newUrl, request));
 			} else if (!url.pathname.includes("/sub")) {
 				//首页改成一个nginx伪装页
-				return new Response(`
-				<!DOCTYPE html>
-				<html>
-				<head>
-				<title>Welcome to nginx!</title>
-				<style>
-					body {
-						width: 35em;
-						margin: 0 auto;
-						font-family: Tahoma, Verdana, Arial, sans-serif;
-					}
-				</style>
-				</head>
-				<body>
-				<h1>Welcome to nginx!</h1>
-				<p>If you see this page, the nginx web server is successfully installed and
-				working. Further configuration is required.</p>
-				
-				<p>For online documentation and support please refer to
-				<a href="http://nginx.org/">nginx.org</a>.<br/>
-				Commercial support is available at
-				<a href="http://nginx.com/">nginx.com</a>.</p>
-				
-				<p><em>Thank you for using nginx.</em></p>
-				</body>
-				</html>
-				`, {
+				return new Response(await nginx(), {
 					headers: {
 						'Content-Type': 'text/html; charset=UTF-8',
 					},
@@ -405,31 +412,36 @@ export default {
 				status: 400,
 				headers: { 'content-type': 'text/plain; charset=utf-8' },
 				});
-				}
+			}
 			
-				if (!path || path.trim() === '') {
+			if (!path || path.trim() === '') {
 				path = '/?ed=2048';
-				} else {
+			} else {
 				// 如果第一个字符不是斜杠，则在前面添加一个斜杠
 				path = (path[0] === '/') ? path : '/' + path;
-				}
-
-				if (!alterid || alterid.trim() === '') {
-				alterid = "0";
-				}
-
-				if (!security || security.trim() === '') {
-				security = "auto";
-				}
-
-				if (!cc || cc.trim() === '') {
-				cc = "US";
-				}
 			}
 
-			if (userAgent.includes('telegram') || userAgent.includes('twitter') || userAgent.includes('miaoko')) {
-			return new Response('Hello World!');
-			} else if (userAgent.includes('clash')) {
+			if (!alterid || alterid.trim() === '') {
+				alterid = "0";
+			}
+
+			if (!security || security.trim() === '') {
+				security = "auto";
+			}
+
+			if (!cc || cc.trim() === '') {
+				cc = "US";
+			}
+		}
+
+		if (!userAgent.includes('subconverter') && MamaJustKilledAMan.some(PutAGunAgainstHisHeadPulledMyTriggerNowHesDead => userAgentHeader.toLowerCase().includes(PutAGunAgainstHisHeadPulledMyTriggerNowHesDead)) && MamaJustKilledAMan.length > 0) {
+			//首页改成一个nginx伪装页
+			return new Response(await nginx(), {
+				headers: {
+					'Content-Type': 'text/html; charset=UTF-8',
+				},
+			});
+		} else if (userAgent.includes('clash')) {
 			const subconverterUrl = `https://${subconverter}/sub?target=clash&url=${encodeURIComponent(request.url)}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
 
 			try {
@@ -455,7 +467,7 @@ export default {
 				headers: { 'content-type': 'text/plain; charset=utf-8' },
 				});
 			}
-			} else if (userAgent.includes('sing-box') || userAgent.includes('singbox')){
+		} else if (userAgent.includes('sing-box') || userAgent.includes('singbox')){
 			const subconverterUrl = `https://${subconverter}/sub?target=singbox&url=${encodeURIComponent(request.url)}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
 
 			try {
@@ -482,144 +494,148 @@ export default {
 				});
 			}
 		} else {
+			let notlsresponseBody;
+			if(noTLS == true){
+				const newAddressesnotlsapi = await getAddressesapi(addressesnotlsapi);
+				const newAddressesnotlscsv = await getAddressescsv('FALSE');
+				addressesnotls = addressesnotls.concat(newAddressesnotlsapi);
+				addressesnotls = addressesnotls.concat(newAddressesnotlscsv);
+		
+				const uniqueAddressesnotls = [...new Set(addressesnotls)];
+		
+				notlsresponseBody = uniqueAddressesnotls.map(address => {
+					let port = "80";
+					let addressid = address;
+				
+					const match = addressid.match(regex);
+					if (!match) {
+						if (address.includes(':') && address.includes('#')) {
+						const parts = address.split(':');
+						address = parts[0];
+						const subParts = parts[1].split('#');
+						port = subParts[0];
+						addressid = subParts[1];
+						} else if (address.includes(':')) {
+						const parts = address.split(':');
+						address = parts[0];
+						port = parts[1];
+						} else if (address.includes('#')) {
+						const parts = address.split('#');
+						address = parts[0];
+						addressid = parts[1];
+						}
+					
+						if (addressid.includes(':')) {
+						addressid = addressid.split(':')[0];
+						}
+					} else {
+						address = match[1];
+						port = match[2] || port;
+						addressid = match[3] || address;
+					}
+				
+					const vmess = `{
+					"v": "2",
+					"ps": "${addressid}>${cc}",
+					"add": "${address}",
+					"port": "${port}",
+					"id": "${uuid}",
+					"aid": "${alterid}",
+					"scy": "${security}",
+					"net": "ws",
+					"type": "none",
+					"host": "${host}",
+					"path": "${path}",
+					"tls": "",
+					"sni": "",
+					"alpn": "",
+					"fp": ""
+					}`;
+				
+					const base64Encoded = utf8ToBase64(vmess);
+					const vmessLink = `vmess://${base64Encoded}`;
+				
+					return vmessLink;
+				}).join('\n');
+			}
 
-		const newAddressesapi = await getAddressesapi(addressesapi);
-		const newAddressescsv = await getAddressescsv('TRUE');
-		addresses = addresses.concat(newAddressesapi);
-		addresses = addresses.concat(newAddressescsv);
+			const newAddressesapi = await getAddressesapi(addressesapi);
+			const newAddressescsv = await getAddressescsv('TRUE');
+			addresses = addresses.concat(newAddressesapi);
+			addresses = addresses.concat(newAddressescsv);
 		
-		const newAddressesnotlsapi = await getAddressesapi(addressesnotlsapi);
-		const newAddressesnotlscsv = await getAddressescsv('FALSE');
-		addressesnotls = addressesnotls.concat(newAddressesnotlsapi);
-		addressesnotls = addressesnotls.concat(newAddressesnotlscsv);
+			// 使用Set对象去重
+			const uniqueAddresses = [...new Set(addresses)];
 		
-		// 使用Set对象去重
-		const uniqueAddresses = [...new Set(addresses)];
-		const uniqueAddressesnotls = [...new Set(addressesnotls)];
-		
-		const responseBody = uniqueAddresses.map(address => {
-			let port = "443";
-			let addressid = address;
-		
-			const match = addressid.match(regex);
-			if (!match) {
-				if (address.includes(':') && address.includes('#')) {
-					const parts = address.split(':');
-					address = parts[0];
-					const subParts = parts[1].split('#');
-					port = subParts[0];
-					addressid = subParts[1];
-				} else if (address.includes(':')) {
-					const parts = address.split(':');
-					address = parts[0];
-					port = parts[1];
-				} else if (address.includes('#')) {
-					const parts = address.split('#');
-					address = parts[0];
-					addressid = parts[1];
+			const responseBody = uniqueAddresses.map(address => {
+				let port = "443";
+				let addressid = address;
+			
+				const match = addressid.match(regex);
+				if (!match) {
+					if (address.includes(':') && address.includes('#')) {
+						const parts = address.split(':');
+						address = parts[0];
+						const subParts = parts[1].split('#');
+						port = subParts[0];
+						addressid = subParts[1];
+					} else if (address.includes(':')) {
+						const parts = address.split(':');
+						address = parts[0];
+						port = parts[1];
+					} else if (address.includes('#')) {
+						const parts = address.split('#');
+						address = parts[0];
+						addressid = parts[1];
+					}
+				
+					if (addressid.includes(':')) {
+						addressid = addressid.split(':')[0];
+					}
+				} else {
+					address = match[1];
+					port = match[2] || port;
+					addressid = match[3] || address;
 				}
 			
-				if (addressid.includes(':')) {
-					addressid = addressid.split(':')[0];
-				}
-			} else {
-				address = match[1];
-				port = match[2] || port;
-				addressid = match[3] || address;
-			}
-		
-			const vmess = `{
-"v": "2",
-"ps": "${addressid}>${cc}",
-"add": "${address}",
-"port": "${port}",
-"id": "${uuid}",
-"aid": "${alterid}",
-"scy": "${security}",
-"net": "ws",
-"type": "none",
-"host": "${host}",
-"path": "${path}",
-"tls": "tls",
-"sni": "${sni}",
-"alpn": "",
-"fp": ""
-}`;
-		
-			const base64Encoded = utf8ToBase64(vmess);
-			const vmessLink = `vmess://${base64Encoded}`;
-		
-			return vmessLink;
-		}).join('\n');
-		
-		const notlsresponseBody = uniqueAddressesnotls.map(address => {
-			let port = "80";
-			let addressid = address;
-		
-			const match = addressid.match(regex);
-			if (!match) {
-				if (address.includes(':') && address.includes('#')) {
-					const parts = address.split(':');
-					address = parts[0];
-					const subParts = parts[1].split('#');
-					port = subParts[0];
-					addressid = subParts[1];
-				} else if (address.includes(':')) {
-					const parts = address.split(':');
-					address = parts[0];
-					port = parts[1];
-				} else if (address.includes('#')) {
-					const parts = address.split('#');
-					address = parts[0];
-					addressid = parts[1];
-				}
+				const vmess = `{
+				"v": "2",
+				"ps": "${addressid}>${cc}",
+				"add": "${address}",
+				"port": "${port}",
+				"id": "${uuid}",
+				"aid": "${alterid}",
+				"scy": "${security}",
+				"net": "ws",
+				"type": "none",
+				"host": "${host}",
+				"path": "${path}",
+				"tls": "tls",
+				"sni": "${sni}",
+				"alpn": "",
+				"fp": ""
+				}`;
 			
-				if (addressid.includes(':')) {
-					addressid = addressid.split(':')[0];
-				}
-			} else {
-				address = match[1];
-				port = match[2] || port;
-				addressid = match[3] || address;
-			}
+				const base64Encoded = utf8ToBase64(vmess);
+				const vmessLink = `vmess://${base64Encoded}`;
+			
+				return vmessLink;
+			}).join('\n');
 		
-			const vmess = `{
-"v": "2",
-"ps": "${addressid}>${cc}",
-"add": "${address}",
-"port": "${port}",
-"id": "${uuid}",
-"aid": "${alterid}",
-"scy": "${security}",
-"net": "ws",
-"type": "none",
-"host": "${host}",
-"path": "${path}",
-"tls": "",
-"sni": "",
-"alpn": "",
-"fp": ""
-}`;
+			let 汇总 = responseBody;
+			if (noTLS == true) 汇总 += '\n' + notlsresponseBody;
+			const base64Response = btoa(汇总) ;
 		
-			const base64Encoded = utf8ToBase64(vmess);
-			const vmessLink = `vmess://${base64Encoded}`;
-		
-			return vmessLink;
-		}).join('\n');
-		
-		const 汇总 = responseBody + '\n'+ notlsresponseBody ;
-		const base64Response = btoa(汇总) ;
-		
-		const response = new Response(base64Response, {
-			headers: { 
-				//"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
-				"content-type": "text/plain; charset=utf-8",
-				"Profile-Update-Interval": `${SUBUpdateTime}`,
-				"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
-			},
-		});
+			const response = new Response(base64Response, {
+				headers: { 
+					//"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
+					"content-type": "text/plain; charset=utf-8",
+					"Profile-Update-Interval": `${SUBUpdateTime}`,
+					"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
+				},
+			});
 
-		return response;
+			return response;
 		}
 
 	}
