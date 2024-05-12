@@ -34,7 +34,7 @@ let addressescsv = [
 
 let subconverter = "apiurl.v1.mk"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
-let noTLS = true; // false
+let noTLS = 'true'; // false
 let BotToken =''; //可以为空，或者@BotFather中输入/start，/newbot，并关注机器人
 let ChatID =''; //可以为空，或者@userinfobot中获取，/start
 let vmessLinks = [ //本地CFcdnVmess节点池
@@ -105,39 +105,6 @@ async function getAddressesapi(api) {
 		console.error(error);
 	}
 	const newAddressesapi = await ADD(newapi);
-/*
-	let newAddressesapi = [];
-	
-	for (const apiUrl of api) {
-		try {
-			const response = await fetch(apiUrl);
-		
-			if (!response.ok) {
-				console.error('获取地址时出错:', response.status, response.statusText);
-				continue;
-			}
-		
-			const text = await response.text();
-			let lines;
-			if (text.includes('\r\n')){
-				lines = text.split('\r\n');
-			} else {
-				lines = text.split('\n');
-			}
-			//const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?(#.*)?$/;
-		
-			const apiAddresses = lines.map(line => {
-				const match = line.match(regex);
-				return match ? match[0] : null;
-			}).filter(Boolean);
-		
-			newAddressesapi = newAddressesapi.concat(apiAddresses);
-		} catch (error) {
-			console.error('获取地址时出错:', error);
-			continue;
-		}
-	}
-*/
 	
 	return newAddressesapi;
 }
@@ -256,6 +223,7 @@ export default {
 		const userAgentHeader = request.headers.get('User-Agent');
 		const userAgent = userAgentHeader ? userAgentHeader.toLowerCase() : "null";
 		const url = new URL(request.url);
+		const format = url.searchParams.get('format') ? url.searchParams.get('format').toLowerCase() : "null";
 		let cc = "";
 		let host = "";
 		let uuid = "";
@@ -303,7 +271,7 @@ export default {
 			// 使用Set对象去重
 			const uniquevmessLinks = [...new Set(vmessLinks)];
 			const vmessLink = uniquevmessLinks[Math.floor(Math.random() * uniquevmessLinks.length)];
-			noTLS = false;
+			noTLS = 'false';
 			//console.log(vmessLinks);
 			// 移除开头的"vmess://"并解码
 			const base64Content = vmessLink.slice(8);
@@ -323,15 +291,10 @@ export default {
 			const ipv4Pattern = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
 			cc = '未知';
-			let ipapiurl = 'http://ip-api.com/json/';
+			let ipapiurl = `http://ip-api.com/json/${obj.host}?lang=zh-CN`;
 
 			// 根据 obj.ps 是否符合 IPv4 判断调用哪个 API
-			if (ipv4Pattern.test(obj.ps)) {
-				ipapiurl += obj.ps;
-			} else {
-				ipapiurl += obj.host;
-			}
-			ipapiurl += '?lang=zh-CN';
+			if (ipv4Pattern.test(obj.ps)) ipapiurl = `http://ip-api.com/json/${obj.ps}?lang=zh-CN`;
 
 			// 发起请求
 			const response = await fetch(ipapiurl);
@@ -365,7 +328,7 @@ export default {
 			host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
 			sni = host;
 
-			await sendMessage("#Vmess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+			await sendMessage("#VMess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 		} else {
 			host = url.searchParams.get('host');
 			uuid = url.searchParams.get('uuid');
@@ -375,19 +338,23 @@ export default {
 			sni = url.searchParams.get('sni') || host;
 			cc = url.searchParams.get('cc');
 			const pathp = url.pathname.replace(/^\/|\/$/g, "");
-			if(pathp && !url.pathname.includes("/sub"))
-			{
+			if(pathp && !url.pathname.includes("/sub")) {
 				const addrPath = url.pathname.replace(/^\/|\/$/g, "");
 				const newUrl = new URL("https://" + addrPath);
 				return fetch(new Request(newUrl, request));
 			} else if (!url.pathname.includes("/sub")) {
+				const envKey = env.URL302 ? 'URL302' : (env.URL ? 'URL' : null);
+				if (envKey) {
+					const URLs = await ADD(env[envKey]);
+					const URL = URLs[Math.floor(Math.random() * URLs.length)];
+					return envKey === 'URL302' ? Response.redirect(URL, 302) : fetch(new Request(URL, request));
+				}
 				//首页改成一个nginx伪装页
 				return new Response(await nginx(), {
 					headers: {
 						'Content-Type': 'text/html; charset=UTF-8',
 					},
 				});
-			
 			}
 			
 			if (!host || !uuid) {
@@ -434,6 +401,10 @@ export default {
 			}
 		}
 
+		if (host.toLowerCase().includes('notls') || host.toLowerCase().includes('trycloudflare')) noTLS = 'true';
+		noTLS = env.NOTLS || noTLS;
+		let subconverterUrl = '';
+
 		if (!userAgent.includes('subconverter') && MamaJustKilledAMan.some(PutAGunAgainstHisHeadPulledMyTriggerNowHesDead => userAgentHeader.toLowerCase().includes(PutAGunAgainstHisHeadPulledMyTriggerNowHesDead)) && MamaJustKilledAMan.length > 0) {
 			//首页改成一个nginx伪装页
 			return new Response(await nginx(), {
@@ -441,61 +412,13 @@ export default {
 					'Content-Type': 'text/html; charset=UTF-8',
 				},
 			});
-		} else if (userAgent.includes('clash')) {
-			const subconverterUrl = `https://${subconverter}/sub?target=clash&url=${encodeURIComponent(request.url)}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
-
-			try {
-				const subconverterResponse = await fetch(subconverterUrl);
-			
-				if (!subconverterResponse.ok) {
-				throw new Error(`Error fetching subconverterUrl: ${subconverterResponse.status} ${subconverterResponse.statusText}`);
-				}
-			
-				const subconverterContent = await subconverterResponse.text();
-			
-				return new Response(subconverterContent, {
-					headers: { 
-						"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
-						"content-type": "text/plain; charset=utf-8",
-						"Profile-Update-Interval": `${SUBUpdateTime}`,
-						"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
-					},
-				});
-			} catch (error) {
-				return new Response(`Error: ${error.message}`, {
-				status: 500,
-				headers: { 'content-type': 'text/plain; charset=utf-8' },
-				});
-			}
-		} else if (userAgent.includes('sing-box') || userAgent.includes('singbox')){
-			const subconverterUrl = `https://${subconverter}/sub?target=singbox&url=${encodeURIComponent(request.url)}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=false&fdn=false&sort=false&new_name=true`;
-
-			try {
-				const subconverterResponse = await fetch(subconverterUrl);
-			
-				if (!subconverterResponse.ok) {
-				throw new Error(`Error fetching subconverterUrl: ${subconverterResponse.status} ${subconverterResponse.statusText}`);
-				}
-			
-				const subconverterContent = await subconverterResponse.text();
-			
-				return new Response(subconverterContent, {
-					headers: { 
-						"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
-						"content-type": "text/plain; charset=utf-8",
-						"Profile-Update-Interval": `${SUBUpdateTime}`,
-						"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
-					},
-				});
-			} catch (error) {
-				return new Response(`Error: ${error.message}`, {
-				status: 500,
-				headers: { 'content-type': 'text/plain; charset=utf-8' },
-				});
-			}
+		} else if ( (userAgent.includes('clash') || (format === 'clash' && !userAgent.includes('subconverter')) ) && !userAgent.includes('nekobox') && !userAgent.includes('cf-workers-sub')) {
+			subconverterUrl = `https://${subconverter}/sub?target=clash&url=${encodeURIComponent(request.url)}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true`;
+		} else if ( (userAgent.includes('sing-box') || userAgent.includes('singbox') || (format === 'singbox' && !userAgent.includes('subconverter')) ) && !userAgent.includes('cf-workers-sub')){
+			subconverterUrl = `https://${subconverter}/sub?target=singbox&url=${encodeURIComponent(request.url)}&insert=false&config=${encodeURIComponent(subconfig)}&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true`;
 		} else {
 			let notlsresponseBody;
-			if(noTLS == true){
+			if(noTLS == 'true'){
 				const newAddressesnotlsapi = await getAddressesapi(addressesnotlsapi);
 				const newAddressesnotlscsv = await getAddressescsv('FALSE');
 				addressesnotls = addressesnotls.concat(newAddressesnotlsapi);
@@ -623,7 +546,7 @@ export default {
 			}).join('\n');
 		
 			let 汇总 = responseBody;
-			if (noTLS == true) 汇总 += '\n' + notlsresponseBody;
+			if (noTLS == 'true') 汇总 += '\n' + notlsresponseBody;
 			const base64Response = btoa(汇总) ;
 		
 			const response = new Response(base64Response, {
@@ -636,6 +559,30 @@ export default {
 			});
 
 			return response;
+		}
+
+		try {
+			const subconverterResponse = await fetch(subconverterUrl);
+		
+			if (!subconverterResponse.ok) {
+			throw new Error(`Error fetching subconverterUrl: ${subconverterResponse.status} ${subconverterResponse.statusText}`);
+			}
+		
+			const subconverterContent = await subconverterResponse.text();
+		
+			return new Response(subconverterContent, {
+				headers: { 
+					"Content-Disposition": `attachment; filename*=utf-8''${encodeURIComponent(FileName)}; filename=${FileName}`,
+					"content-type": "text/plain; charset=utf-8",
+					"Profile-Update-Interval": `${SUBUpdateTime}`,
+					"Subscription-Userinfo": `upload=${UD}; download=${UD}; total=${total}; expire=${expire}`,
+				},
+			});
+		} catch (error) {
+			return new Response(`Error: ${error.message}`, {
+			status: 500,
+			headers: { 'content-type': 'text/plain; charset=utf-8' },
+			});
 		}
 
 	}
