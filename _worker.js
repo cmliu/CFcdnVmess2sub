@@ -333,7 +333,7 @@ export default {
 			host = url.searchParams.get('host');
 			uuid = url.searchParams.get('uuid');
 			path = url.searchParams.get('path') || '/?ed=2560';
-      path = (path[0] === '/') ? path : '/' + path;
+			path = (path[0] === '/') ? path : '/' + path;
 			alterid = url.searchParams.get('alterid') || '0';
 			security = url.searchParams.get('security') || 'auto';
 			sni = url.searchParams.get('sni') || host;
