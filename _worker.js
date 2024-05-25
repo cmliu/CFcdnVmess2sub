@@ -32,7 +32,7 @@ let addressescsv = [
 	//'https://raw.githubusercontent.com/cmliu/WorkerVless2sub/main/addressescsv.csv', //iptest测速结果文件。
 ];
 
-let subconverter = "apiurl.v1.mk"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
+let subconverter = "url.v1.mk"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
 let noTLS = 'true'; // false
 let BotToken =''; //可以为空，或者@BotFather中输入/start，/newbot，并关注机器人
@@ -328,15 +328,16 @@ export default {
 			host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
 			sni = host;
 
-			await sendMessage("#VMess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgent}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
+			await sendMessage("#VMess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgentHeader}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 		} else {
 			host = url.searchParams.get('host');
 			uuid = url.searchParams.get('uuid');
-			path = url.searchParams.get('path');
-			alterid = url.searchParams.get('alterid');
-			security = url.searchParams.get('security');
+			path = url.searchParams.get('path') || '/?ed=2560';
+      path = (path[0] === '/') ? path : '/' + path;
+			alterid = url.searchParams.get('alterid') || '0';
+			security = url.searchParams.get('security') || 'auto';
 			sni = url.searchParams.get('sni') || host;
-			cc = url.searchParams.get('cc');
+			cc = url.searchParams.get('cc') || 'US';
 			const pathp = url.pathname.replace(/^\/|\/$/g, "");
 			if(pathp && !url.pathname.includes("/sub")) {
 				const addrPath = url.pathname.replace(/^\/|\/$/g, "");
@@ -379,25 +380,6 @@ export default {
 				status: 400,
 				headers: { 'content-type': 'text/plain; charset=utf-8' },
 				});
-			}
-			
-			if (!path || path.trim() === '') {
-				path = '/?ed=2048';
-			} else {
-				// 如果第一个字符不是斜杠，则在前面添加一个斜杠
-				path = (path[0] === '/') ? path : '/' + path;
-			}
-
-			if (!alterid || alterid.trim() === '') {
-				alterid = "0";
-			}
-
-			if (!security || security.trim() === '') {
-				security = "auto";
-			}
-
-			if (!cc || cc.trim() === '') {
-				cc = "US";
 			}
 		}
 
@@ -458,22 +440,22 @@ export default {
 					}
 				
 					const vmess = `{
-					"v": "2",
-					"ps": "${addressid}>${cc}",
-					"add": "${address}",
-					"port": "${port}",
-					"id": "${uuid}",
-					"aid": "${alterid}",
-					"scy": "${security}",
-					"net": "ws",
-					"type": "none",
-					"host": "${host}",
-					"path": "${path}",
-					"tls": "",
-					"sni": "",
-					"alpn": "",
-					"fp": ""
-					}`;
+"v": "2",
+"ps": "${addressid}>${cc}",
+"add": "${address}",
+"port": "${port}",
+"id": "${uuid}",
+"aid": "${alterid}",
+"scy": "${security}",
+"net": "ws",
+"type": "none",
+"host": "${host}",
+"path": "${path}",
+"tls": "",
+"sni": "",
+"alpn": "",
+"fp": ""
+}`;
 				
 					const base64Encoded = utf8ToBase64(vmess);
 					const vmessLink = `vmess://${base64Encoded}`;
@@ -522,22 +504,22 @@ export default {
 				}
 			
 				const vmess = `{
-				"v": "2",
-				"ps": "${addressid}>${cc}",
-				"add": "${address}",
-				"port": "${port}",
-				"id": "${uuid}",
-				"aid": "${alterid}",
-				"scy": "${security}",
-				"net": "ws",
-				"type": "none",
-				"host": "${host}",
-				"path": "${path}",
-				"tls": "tls",
-				"sni": "${sni}",
-				"alpn": "",
-				"fp": ""
-				}`;
+"v": "2",
+"ps": "${addressid}>${cc}",
+"add": "${address}",
+"port": "${port}",
+"id": "${uuid}",
+"aid": "${alterid}",
+"scy": "${security}",
+"net": "ws",
+"type": "none",
+"host": "${host}",
+"path": "${path}",
+"tls": "tls",
+"sni": "${sni}",
+"alpn": "",
+"fp": ""
+}`;
 			
 				const base64Encoded = utf8ToBase64(vmess);
 				const vmessLink = `vmess://${base64Encoded}`;
