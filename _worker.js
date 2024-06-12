@@ -241,8 +241,8 @@ export default {
 		subconverter = env.SUBAPI || subconverter;
 		subconfig = env.SUBCONFIG || subconfig;
 		FileName = env.SUBNAME || FileName;
-		const userAgentHeader = request.headers.get('User-Agent');
-		const userAgent = userAgentHeader ? userAgentHeader.toLowerCase() : "null";
+		const userAgentHeader = request.headers.get('User-Agent') || "null";
+		const userAgent = userAgentHeader.toLowerCase();
 		const url = new URL(request.url);
 		const format = url.searchParams.get('format') ? url.searchParams.get('format').toLowerCase() : "null";
 		let cc = "";
@@ -367,8 +367,14 @@ export default {
 			const pathp = url.pathname.replace(/^\/|\/$/g, "");
 			if(pathp && !url.pathname.includes("/sub")) {
 				const addrPath = url.pathname.replace(/^\/|\/$/g, "");
-				const newUrl = new URL("https://" + addrPath);
-				return fetch(new Request(newUrl, request));
+				const newUrl = new URL("https://" + addrPath + url.search);
+				return fetch(new Request(newUrl, {
+					...request,
+					headers: {
+						...request.headers,
+						'User-Agent': `${userAgentHeader}`
+					}
+				}));
 			} else if (!url.pathname.includes("/sub")) {
 				const envKey = env.URL302 ? 'URL302' : (env.URL ? 'URL' : null);
 				if (envKey) {
