@@ -192,7 +192,7 @@ async function getAddressescsv(tls) {
 }
 
 async function ADD(envadd) {
-	var addtext = envadd.replace(/[	|"'\r\n]+/g, ',').replace(/,+/g, ',');  // 双引号、单引号和换行符替换为逗号
+	var addtext = envadd.replace(/[	|"'\r\n]+/g, ',').replace(/,+/g, ',');	// 双引号、单引号和换行符替换为逗号
 	//console.log(addtext);
 	if (addtext.charAt(0) == ',') addtext = addtext.slice(1);
 	if (addtext.charAt(addtext.length -1) == ',') addtext = addtext.slice(0, addtext.length - 1);
@@ -364,17 +364,10 @@ export default {
 			security = url.searchParams.get('security') || 'auto';
 			sni = url.searchParams.get('sni') || host;
 			cc = url.searchParams.get('cc') || '未知';
-			const pathp = url.pathname.replace(/^\/|\/$/g, "");
-			if(pathp && !url.pathname.includes("/sub")) {
-				const addrPath = url.pathname.replace(/^\/|\/$/g, "");
+			const addrPath = url.pathname.replace(/^\/|\/$/g, "");
+			if(addrPath && !url.pathname.includes("/sub")) {
 				const newUrl = new URL("https://" + addrPath + url.search);
-				return fetch(new Request(newUrl, {
-					...request,
-					headers: {
-						...request.headers,
-						'User-Agent': `${userAgentHeader}`
-					}
-				}));
+				return fetch(new Request(newUrl, request));
 			} else if (!url.pathname.includes("/sub")) {
 				const envKey = env.URL302 ? 'URL302' : (env.URL ? 'URL' : null);
 				if (envKey) {
