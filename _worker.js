@@ -6,16 +6,16 @@ let mytoken= ['auto'];//快速订阅访问入口, 留空则不启动快速订阅
 // 设置优选地址，不带端口号默认443，TLS订阅生成
 let addresses = [
 	'icook.tw:2053#官方优选域名',
-	'cloudflare.cfgo.cc#优选官方线路',
-	'rx.cf.090227.xyz',
-	'cf.090227.xyz#三网自适应分流官方优选',
-	'ct.090227.xyz#电信官方优选',
-	'cmcc.090227.xyz#移动官方优选',
-	'shopify.com',
-	'time.is',
-	'icook.hk',
-	'icook.tw',
-	'ip.sb',
+	'cloudflare.cfgo.cc:2053#优选官方线路',
+	'rx.cf.090227.xyz:2053',
+	'cf.090227.xyz:2053#三网自适应分流官方优选',
+	'ct.090227.xyz:2053#电信官方优选',
+	'cmcc.090227.xyz:2053#移动官方优选',
+	'shopify.com:2053',
+	'time.is:2053',
+	'icook.hk:2053',
+	'icook.tw:2053',
+	'ip.sb:2053',
 	'japan.com',
 	'malaysia.com',
 	'russia.com',
@@ -109,7 +109,7 @@ let addressescsv = [
 
 let subconverter = "SUBAPI.fxxk.dedyn.io"; //在线订阅转换后端，目前使用肥羊的订阅转换功能。支持自建psub 可自行搭建https://github.com/bulianglin/psub
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_Full_MultiMode.ini"; //订阅配置文件
-let noTLS = 'false'; // true
+let noTLS = 'true'; // true,false
 let BotToken =''; //可以为空，或者@BotFather中输入/start，/newbot，并关注机器人
 let ChatID =''; //可以为空，或者@userinfobot中获取，/start
 let vmessLinks = [ //本地CFcdnVmess节点池
