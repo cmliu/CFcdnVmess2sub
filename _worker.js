@@ -307,7 +307,7 @@ export default {
 
 			// 读取并赋值对应字段
 			uuid = obj.id;
-			path = '/'+ obj.host +':'+ obj.port + obj.path;
+			//path = '/'+ obj.host +':'+ obj.port + obj.path;
 			//host = proxyhosts[Math.floor(Math.random() * proxyhosts.length)] ;
 			alterid = obj.aid;
 			security = obj.scy;
@@ -350,8 +350,15 @@ export default {
 			
 			// 使用Set对象去重
 			const uniqueproxyhosts = [...new Set(proxyhosts)];
-			host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
-			sni = host;
+			if(proxyhosts.length > 0){
+				path = '/'+ obj.host +':'+ obj.port + obj.path;
+				host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
+				sni = host;
+			} else {
+				path = obj.path;
+				host = obj.host;
+				sni = host;
+			}
 
 			await sendMessage("#VMess订阅", request.headers.get('CF-Connecting-IP'), `UA: ${userAgentHeader}</tg-spoiler>\n域名: ${url.hostname}\n<tg-spoiler>入口: ${url.pathname + url.search}</tg-spoiler>`);
 		} else {
