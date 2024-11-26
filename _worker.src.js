@@ -350,7 +350,7 @@ export default {
 			
 			// 使用Set对象去重
 			const uniqueproxyhosts = [...new Set(proxyhosts)];
-			if(proxyhosts.length > 0){
+			if(uniqueproxyhosts.length > 0){
 				path = '/'+ obj.host +':'+ obj.port + obj.path;
 				host = uniqueproxyhosts[Math.floor(Math.random() * uniqueproxyhosts.length)];
 				sni = host;
