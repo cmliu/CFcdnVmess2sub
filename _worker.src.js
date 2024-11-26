@@ -54,6 +54,7 @@ const regex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[.*\]):?(\d+)?#?(.*)?$/;
 // 虚假uuid和hostname，用于发送给配置生成服务
 let fakeUserID ;
 let fakeHostName ;
+/*Obfuscate-cmliu*/
 function utf8ToBase64(str) {
 	return btoa(unescape(encodeURIComponent(str)));
 }
